@@ -81,7 +81,7 @@ class DropletClient(HTTPSConnection):
     def __firewall_exists__(self, name):
         return self.__name_to_id__(name, "/v2/firewalls", "firewalls")
 
-    def firewall(self, name, rules):
+    def firewall(self, name, droplet_ids, inbound, outbound):
         firewall_id = self.__firewall_exists__(name)
         if firewall_id is not None:
             print("Firewall exists - skipping creation step")
@@ -89,8 +89,8 @@ class DropletClient(HTTPSConnection):
 
         headers = {"Content-Type": "application/json", "Authorization": "Bearer {}"
                 .format(self.digital_ocean_api_key)}
-        self.request("POST", "/v2/firewall", json.dumps({'name': name,
-            'inbound_rules': rules}), headers)
+        self.request("POST", "/v2/firewalls", json.dumps({'name': name, 'droplet_ids': droplet_ids,
+            'inbound_rules': inbound, 'outbound_rules': outbound}), headers)
         response = self.getresponse().read()
         try:
             return json.loads(response)['firewall']['id']

@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
 
+import json
 import os
 import sys
 
+from digitalocean.client import DropletClient
+
+from http.client import HTTPSConnection
+
 from paramiko.rsakey import RSAKey
 
-from digitalocean.client import DropletClient
+class ExternalIPClient(HTTPSConnection):
+    def __init__(self):
+        super().__init__(host='api.ipify.org')
+
+    def query(self):
+        self.request("GET", "/", None, {})
+        return self.getresponse().read().decode('ascii')
 
 def prompt(resource):
     print('Enter {}:'.format(resource))
@@ -26,6 +37,9 @@ def main():
         print('USAGE: vpn-setup.py [VPN_NAME] [SSH_PRIV_KEY_PATH]')
         sys.exit(0)
 
+    public_ip_client = ExternalIPClient()
+    public_ip = public_ip_client.query()
+
     print('Generating SSH key for VPN box')
     pubkey = generate_ssh_key(sys.argv[2])
 
@@ -38,6 +52,10 @@ def main():
             ssh_keys=[pubkey_id])
     if droplet_id is None:
         sys.exit(1)
+    client.firewall('ssh-from-host', [droplet_id],
+            [{'protocol': 'tcp', 'ports': '22', 'sources': { 'addresses': public_ip }}],
+            [{'protocol': 'tcp', 'ports': '1-65535', 'destinations': { 'addresses': '0.0.0.0/0' }},
+             {'protocol': 'udp', 'ports': '1-65535', 'destinations': { 'addresses': '0.0.0.0/0'}}])
 
 if __name__ == '__main__':
     main()
