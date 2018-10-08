@@ -12,5 +12,5 @@ setup(name="vpn-setup",
       scripts=["vpnsetup.py"],
       packages=["digitalocean", "vpn"],
       install_requires=[
-          'fabric',
+          'paramiko',
       ])
