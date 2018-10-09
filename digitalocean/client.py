@@ -9,7 +9,7 @@ class DropletClient(HTTPSConnection):
         self.digital_ocean_api_key = api_key
         super().__init__(host)
 
-    def __name_to_id__(self, name, endpoint, key):
+    def __name_to_json__(self, name, endpoint, key):
         self.request("GET", "{}?per_page=100".format(endpoint), None, {"Authorization": "Bearer {}"
             .format(self.digital_ocean_api_key)})
         response = self.getresponse().read()
@@ -33,10 +33,11 @@ class DropletClient(HTTPSConnection):
         elif len(entity) < 1:
             return None
         else:
-            return entity[0]['id']
+            return entity[0]
 
     def __droplet_exists__(self, name):
-        return self.__name_to_id__(name, "/v2/droplets", "droplets")
+        json_response = self.__name_to_json__(name, "/v2/droplets", "droplets")
+        return json_response['id'], json_response['networks']['v4'][0]['ip_address']
 
     def droplet(self, name, region, size, image, **kwargs):
         droplet_id = self.__droplet_exists__(name)
@@ -58,7 +59,7 @@ class DropletClient(HTTPSConnection):
             return None
 
     def __pubkey_exists__(self, name):
-        return self.__name_to_id__(name, "/v2/account/keys", "ssh_keys")
+        return self.__name_to_json__(name, "/v2/account/keys", "ssh_keys")['id']
 
     def pubkey(self, pubkey_path, key_content):
         pubkey_name = os.path.basename(pubkey_path)
@@ -79,7 +80,7 @@ class DropletClient(HTTPSConnection):
             return None
 
     def __firewall_exists__(self, name):
-        return self.__name_to_id__(name, "/v2/firewalls", "firewalls")
+        return self.__name_to_json__(name, "/v2/firewalls", "firewalls")['id']
 
     def firewall(self, name, droplet_ids, inbound, outbound):
         firewall_id = self.__firewall_exists__(name)

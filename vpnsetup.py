@@ -6,9 +6,12 @@ import sys
 
 from digitalocean.client import DropletClient
 
+from vpn.config import ConfigurationController
+
 from http.client import HTTPSConnection
 
 from paramiko.rsakey import RSAKey
+from paramiko.client import SSHClient
 
 class ExternalIPClient(HTTPSConnection):
     def __init__(self):
@@ -48,7 +51,7 @@ def main():
     pubkey_id = client.pubkey(sys.argv[2], pubkey)
     if pubkey_id is None:
         sys.exit(1)
-    droplet_id = client.droplet(sys.argv[1], 'ams2', 's-1vcpu-1gb', 'ubuntu-18-04-x64',
+    droplet_id, droplet_ip = client.droplet(sys.argv[1], 'ams2', 's-1vcpu-1gb', 'ubuntu-18-04-x64',
             ssh_keys=[pubkey_id])
     if droplet_id is None:
         sys.exit(1)
@@ -56,6 +59,11 @@ def main():
             [{'protocol': 'tcp', 'ports': '22', 'sources': { 'addresses': public_ip }}],
             [{'protocol': 'tcp', 'ports': '1-65535', 'destinations': { 'addresses': '0.0.0.0/0' }},
              {'protocol': 'udp', 'ports': '1-65535', 'destinations': { 'addresses': '0.0.0.0/0'}}])
+
+    ssh = ConfigurationController(droplet_ip, sys.argv[2])
+    ssh.install_packages()
+    ssh.copy_setup_scripts()
+    ssh.run_setup()
 
 if __name__ == '__main__':
     main()
