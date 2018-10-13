@@ -1,3 +1,0 @@
-import vpnsetup
-
-vpnsetup.main()

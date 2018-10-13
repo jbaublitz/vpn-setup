@@ -1,0 +1,7 @@
+---
+ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') }}/.ssh/id_rsa_ansible"
+ssh_public_key_file: "{{ ansible_ssh_private_key_file }}.pub"
+
+do_api_key: "{{ lookup('env', 'DO_API_KEY') }}"
+
+droplet_name: autovpn
