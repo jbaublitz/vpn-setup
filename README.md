@@ -23,10 +23,17 @@ Example Playbook
 
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
 
-    - hosts: localhost
-      connection: local
-      roles:
-         - role: vpn-setup
+```
+---
+- hosts: localhost
+  connection: local
+  roles:
+    - { role: vpn-setup, target: local }
+- hosts: vpn
+  remote_user: root
+  roles:
+    - { role: vpn-setup, target: vpn }
+```
 
 License
 -------

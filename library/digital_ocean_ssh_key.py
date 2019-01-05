@@ -7,7 +7,6 @@ import requests
 class DO():
     def __init__(self, module, result, api_token, base_url='https://api.digitalocean.com/v2'):
         self.module = module
-        self.result = result
         self.api_token = api_token
         self.base_url = base_url
 
@@ -23,28 +22,27 @@ class DO():
 
         return json_response
 
-def droplet_request(module, result, api_token, name, region_id, image_id, size_id, ssh_key_ids=[]):
+def ssh_key_request(module, result, api_token, name, ssh_pub_key):
     do = DO(module, result, api_token)
-    droplets_json = do.request('GET', '/droplets', None)
-    if 'droplets' not in droplets_json:
+    keys_json = do.request('GET', '/account/keys', None)
+    if 'ssh_keys' not in keys_json:
         module.fail_json(msg='Invalid response from API: {}'.format(keys_json), **result)
 
-    for droplet in droplets_json['droplets']:
-        if droplet['name'] == name:
-            module.exit_json(droplet=droplet, **result)
-    droplet_json_response = do.request('POST', '/droplets', {'name': name, 'region': region_id,
-        'size': size_id, 'image': image_id, 'ssh_keys': ssh_key_ids})
+    for key in keys_json['ssh_keys']:
+        if key['name'] == name:
+            if key['public_key'] == ssh_pub_key:
+                module.exit_json(ssh_key=key, **result)
+            else:
+                do.request('DELETE', '/account/keys/{}'.format(key['id']), None)
+    key = do.request('POST', '/account/keys', {'name': name, 'public_key': ssh_pub_key})
     result['changed'] = True
-    return droplet_json_response
+    return key
 
 def run_module():
     module_args = dict(
         api_token=dict(type='str', required=True),
         name=dict(type='str', required=True),
-        region_id=dict(type='str', required=True),
-        image_id=dict(type='str', required=True),
-        size_id=dict(type='str', required=True),
-        ssh_key_ids=dict(type='list'),
+        ssh_pub_key=dict(type='str', required=True),
     )
 
     result = dict(changed=False, original_message='', message='')
@@ -57,12 +55,11 @@ def run_module():
     if module.check_mode:
         return result
 
-    droplet = droplet_request(module, result, module.params.get('api_token'),
-            module.params.get('name'), module.params.get('region_id'),
-            module.params.get('image_id'), module.params.get('size_id'),
-            module.params.get('ssh_key_ids'))
+    key = ssh_key_request(module, result, module.params.get('api_token'), module.params.get('name'),
+            module.params.get('ssh_pub_key'))
+    result['ssh_key'] = key
 
-    module.exit_json(droplet=droplet, **result)
+    module.exit_json(**result)
 
 def main():
     run_module()

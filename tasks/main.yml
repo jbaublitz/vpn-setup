@@ -1,27 +1,4 @@
----
-- name: Get public IP of host
-  uri:
-    url: https://api.ipify.org
-    return_content: yes
-  register: public_ip
-- name: Generate SSH key
-  command: ssh-keygen -b 2048 -t rsa -f "{{ ansible_ssh_private_key_file }}"
-  args:
-    creates: "{{ ansible_ssh_private_key_file }}"
-- name: Add SSH key
-  digital_ocean:
-    api_token: "{{ do_api_key }}"
-    name: "{{ ansible_ssh_private_key_file | basename }}"
-    command: ssh
-    ssh_pub_key: "{{ lookup('file', ssh_public_key_file) }}"
-  register: ssh_key
-- name: Create droplet
-  digital_ocean:
-    api_token: "{{ do_api_key }}"
-    name: "{{ droplet_name }}"
-    region_id: ams2
-    image_id: ubuntu-18-04-x64
-    size_id: s-1vcpu-1gb
-    unique_name: yes
-    ssh_key_ids:
-      - "{{ ssh_key.ssh_key.id }}"
+- include_tasks: local.yml
+  when: target == 'local'
+- include_tasks: vpn.yml
+  when: target == 'vpn'
