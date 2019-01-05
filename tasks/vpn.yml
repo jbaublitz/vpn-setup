@@ -1,0 +1,96 @@
+---
+- name: Install software
+  apt:
+    update_cache: yes
+    name:
+      - libpam-google-authenticator
+      - openvpn
+      - golang-cfssl
+
+- name: Make vpn bundle dir
+  file:
+    name: /root/vpn
+    state: directory
+- name: Make vpn bundle subdir for certs
+  file:
+    name: /root/vpn/certs
+    state: directory
+- name: Make vpn bundle subdir for config
+  file:
+    name: /root/vpn/config
+    state: directory
+
+- name: Install cfssl CSR config file
+  template:
+    src: templates/csr.json.j2
+    dest: /root/vpn/config/csr.json
+- name: Install cfssl CA config file
+  template:
+    src: templates/ca.json.j2
+    dest: /root/vpn/config/ca.json
+- name: Generate SSL CA
+  shell: cfssl genkey -initca /root/vpn/config/csr.json | cfssljson -bare /root/vpn/certs/ca
+  args:
+    creates: /root/vpn/certs/ca.pem
+- name: Generate SSL server
+  shell: cfssl gencert -ca=/root/vpn/certs/ca.pem -ca-key=/root/vpn/certs/ca-key.pem \
+         -config=/root/vpn/config/ca.json -profile="server" -hostname="server" \
+         /root/vpn/config/csr.json | cfssljson -bare /root/vpn/certs/server
+  args:
+    creates: /root/vpn/certs/server.pem
+- name: Generate SSL client
+  shell: cfssl gencert -ca=/root/vpn/certs/ca.pem -ca-key=/root/vpn/certs/ca-key.pem \
+         -config=/root/vpn/config/ca.json -profile="client" -hostname="client" \
+         /root/vpn/config/csr.json | cfssljson -bare /root/vpn/certs/client
+  args:
+    creates: /root/vpn/certs/client.pem
+- name: Generate DH params
+  command: openssl dhparam -out /root/vpn/certs/dh2048.pem 2048
+  args:
+    creates: /root/vpn/certs/dh2048.pem
+
+- name: Make openvpn user
+  user:
+    name: openvpn
+    create_home: no
+    shell: /usr/sbin/nologin
+- name: Make keys/ directory in /etc/openvpn/server
+  file:
+    name: /etc/openvpn/server/keys
+    state: directory
+- name: Copy necessary private keys to /etc/openvpn/server
+  copy:
+    remote_src: yes
+    src: /root/vpn/certs/server-key.pem
+    dest: /etc/openvpn/server/keys
+    mode: 0600
+    owner: openvpn
+    group: openvpn
+- name: Copy necessary private keys to /etc/openvpn/server
+  copy:
+    remote_src: yes
+    src: /root/vpn/certs/dh2048.pem
+    dest: /etc/openvpn/server/keys
+    mode: 0600
+    owner: openvpn
+    group: openvpn
+- name: Copy necessary public keys to /etc/openvpn/server
+  copy:
+    remote_src: yes
+    src: /root/vpn/certs/server.pem
+    dest: /etc/openvpn/server/keys
+    mode: 0644
+    owner: openvpn
+    group: openvpn
+- name: Copy necessary public keys to /etc/openvpn/server
+  copy:
+    remote_src: yes
+    src: /root/vpn/certs/ca.pem
+    dest: /etc/openvpn/server/keys
+    mode: 0644
+    owner: openvpn
+    group: openvpn
+- name: Generate OpenVPN config file
+  template:
+    src: templates/openvpn.conf.j2
+    dest: /etc/openvpn/server/openvpn.conf

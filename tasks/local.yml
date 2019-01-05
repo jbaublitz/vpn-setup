@@ -37,7 +37,12 @@
     outbound_rules:
     droplet_ids:
       - "{{ droplet.droplet.id }}"
+- name: Get droplet IPv4 address
+  digital_ocean_facts:
+    api_token: "{{ do_api_key }}"
+    name: "{{ droplet_name }}"
+  register: droplet_for_ip
 - name: Register droplet in vpn group
   add_host:
-    hostname: "{{ droplet.droplet.networks.v4.0.ip_address }}"
+    hostname: "{{ droplet_for_ip.droplet.networks.v4.0.ip_address }}"
     groups: vpn

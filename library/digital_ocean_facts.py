@@ -23,7 +23,7 @@ class DO():
 
         return json_response
 
-def droplet_request(module, result, api_token, name, region_id, image_id, size_id, ssh_key_ids=[]):
+def droplet_request(module, result, api_token, name):
     do = DO(module, result, api_token)
     droplets_json = do.request('GET', '/droplets', None)
     if 'droplets' not in droplets_json:
@@ -32,19 +32,12 @@ def droplet_request(module, result, api_token, name, region_id, image_id, size_i
     for droplet in droplets_json['droplets']:
         if droplet['name'] == name:
             module.exit_json(droplet=droplet, **result)
-    droplet_json_response = do.request('POST', '/droplets', {'name': name, 'region': region_id,
-        'size': size_id, 'image': image_id, 'ssh_keys': ssh_key_ids})
-    result['changed'] = True
-    return droplet_json_response
+    module.exit_json(droplet={}, **result)
 
 def run_module():
     module_args = dict(
         api_token=dict(type='str', required=True),
         name=dict(type='str', required=True),
-        region_id=dict(type='str', required=True),
-        image_id=dict(type='str', required=True),
-        size_id=dict(type='str', required=True),
-        ssh_key_ids=dict(type='list'),
     )
 
     result = dict(changed=False, original_message='', message='')
@@ -57,12 +50,8 @@ def run_module():
     if module.check_mode:
         return result
 
-    droplet = droplet_request(module, result, module.params.get('api_token'),
-            module.params.get('name'), module.params.get('region_id'),
-            module.params.get('image_id'), module.params.get('size_id'),
-            module.params.get('ssh_key_ids'))
-
-    module.exit_json(droplet=droplet['droplet'], **result)
+    droplet_request(module, result, module.params.get('api_token'),
+            module.params.get('name'))
 
 def main():
     run_module()

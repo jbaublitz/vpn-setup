@@ -6,7 +6,7 @@ This role is for automation of a hardened VPN setup on Digital Ocean
 Requirements
 ------------
 
-dopy (may change - will potentially bundle custom Digital Ocean modules in role)
+requests
 
 Role Variables
 --------------
@@ -21,7 +21,11 @@ None
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+Invocation should be as follows:
+
+`DO_API_KEY=[KEY] ansible-playbook -i vpn-setup/inventory vpn-setup.yml`
+
+where `vpn-setup.yml` contains the following:
 
 ```
 ---
@@ -29,6 +33,12 @@ Including an example of how to use your role (for instance, with variables passe
   connection: local
   roles:
     - { role: vpn-setup, target: local }
+- hosts: vpn 
+  remote_user: root
+  gather_facts: no
+  tasks:
+  - name: Wait for SSH to become available
+    wait_for_connection:
 - hosts: vpn
   remote_user: root
   roles:

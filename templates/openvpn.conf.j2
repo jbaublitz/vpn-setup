@@ -1,0 +1,9 @@
+local {{ ansible_default_ipv4.address }}
+port 443
+proto tcp-server
+dev tun
+
+ca /etc/openvpn/server/keys/ca.pem
+cert /etc/openvpn/server/keys/server.pem
+key /etc/openvpn/server/keys/server-key.pem
+dh /etc/openvpn/server/keys/dh2048.pem

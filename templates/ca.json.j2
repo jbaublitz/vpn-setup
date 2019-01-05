@@ -1,0 +1,21 @@
+{
+    "signing": {
+        "profiles": {
+            "server": {
+                "expiry": "{{ ca_expiration }}",
+                "usages": [
+                    "digital signature",
+                    "key encipherment",
+                    "server auth"
+                ]
+            },
+            "client": {
+                "expiry": "{{ ca_expiration }}",
+                "usages": [
+                    "signing",
+                    "client auth"
+                ]
+            }
+        }
+    }
+}
