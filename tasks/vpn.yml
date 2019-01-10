@@ -93,4 +93,47 @@
 - name: Generate OpenVPN config file
   template:
     src: templates/openvpn.conf.j2
-    dest: /etc/openvpn/server/openvpn.conf
+    dest: /etc/openvpn/server.conf
+  notify: 
+    - Restart OpenVPN
+- name: Start OpenVPN server
+  systemd:
+    name: openvpn@server
+    state: started
+- name: sysctl ip_forward
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+- name: Add iptables masquerade
+  iptables:
+    action: append
+    chain: POSTROUTING
+    table: nat
+    out_interface: eth0
+    jump: MASQUERADE
+
+- name: Generate client OpenVPN config file
+  template:
+    src: templates/openvpn-client.conf.j2
+    dest: /root/openvpn.conf
+- name: Copy config file to host
+  fetch:
+    src: /root/openvpn.conf
+    dest: "{{ lookup('env', 'HOME') }}/openvpn.conf"
+    flat: yes
+- name: Copy CA to host
+  fetch:
+    src: /root/vpn/certs/ca.pem
+    dest: "{{ lookup('env', 'HOME') }}/ca.pem"
+    flat: yes
+- name: Copy client certificate to host
+  fetch:
+    src: /root/vpn/certs/client.pem
+    dest: "{{ lookup('env', 'HOME') }}/client.pem"
+    flat: yes
+- name: Copy client key to host
+  fetch:
+    src: /root/vpn/certs/client-key.pem
+    dest: "{{ lookup('env', 'HOME') }}/client-key.pem"
+    flat: yes

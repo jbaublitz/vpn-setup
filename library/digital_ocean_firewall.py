@@ -31,14 +31,21 @@ def firewall_request(module, result, api_token, name, inbound_rules, outbound_ru
         module.fail_json(msg='Invalid response from API: {}'.format(firewall_json), **result)
 
     for firewall in firewall_json['firewalls']:
-        if firewall['name'] == name and \
-                firewall['inbound_rules'][0]['sources']['addresses'][0] == \
-                inbound_rules[0]['sources']['addresses'][0]:
+        equal = True
+        for inbound_rule1, inbound_rule2 in zip(firewall['inbound_rules'], inbound_rules):
+            if inbound_rule1['sources']['addresses'].sort() != inbound_rule2['sources']['addresses'].sort():
+                equal = False
+        if len(inbound_rules) != len(firewall['inbound_rules']):
+            equal = False
+
+        if firewall['name'] == name and equal:
             module.exit_json(firewall=firewall, **result)
         elif firewall['name'] == name:
             firewall_change_response = do.request('PUT', '/firewalls/{}'.format(firewall['id']),
                 {'name': name, 'inbound_rules': inbound_rules, 'outbound_rules': outbound_rules,
                 'droplet_ids': droplet_ids})
+            if 'firewall' not in firewall_change_response:
+                module.fail_json(msg='Invalid API response: {}'.format(firewall_change_response), **result)
             result['changed'] = True
             module.exit_json(firewall=firewall_change_response, **result)
     firewall_json_response = do.request('POST', '/firewalls', {'name': name,

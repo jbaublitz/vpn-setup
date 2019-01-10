@@ -1,0 +1,11 @@
+client
+dev tun
+proto tcp
+remote {{ ansible_default_ipv4.address }} 443
+remote-cert-tls server
+
+ca ca.pem
+cert client.pem
+key client-key.pem
+
+cipher AES-256-CBC

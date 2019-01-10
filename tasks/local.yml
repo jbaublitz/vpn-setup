@@ -34,7 +34,22 @@
         sources:
           addresses:
             - "{{ public_ip.content }}"
+      - protocol: tcp
+        ports: 443
+        sources:
+          addresses:
+            - 0.0.0.0/0
     outbound_rules:
+      - protocol: tcp
+        ports: 1-65535
+        destinations:
+          addresses:
+            - 0.0.0.0/0
+      - protocol: udp 
+        ports: 1-65535
+        destinations:
+          addresses:
+            - 0.0.0.0/0
     droplet_ids:
       - "{{ droplet.droplet.id }}"
 - name: Get droplet IPv4 address

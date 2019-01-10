@@ -11,25 +11,39 @@ class DO():
         self.api_token = api_token
         self.base_url = base_url
 
-    def request(self, method, endpoint, json):
+    def request(self, method, endpoint, json=None, endpoint_is_absolute=False):
         headers = {}
         headers['Content-Type'] = 'application/json'
         headers['Authorization'] = 'Bearer {}'.format(self.api_token)
         try:
-            json_response = requests.request(method, '{}{}'.format(self.base_url, endpoint),
-                    json=json, headers=headers).json()
+            if endpoint_is_absolute:
+                url = endpoint
+            else:
+                url = '{}{}'.format(self.base_url, endpoint)
+
+            json_response = requests.request(method, url, json=json, headers=headers).json()
         except Exception as e:
             self.module.fail_json(msg=e, **self.result)
 
-        return json_response
+        return json_response 
+
+    def list_droplets(self):
+        droplets = []
+        json_response = self.request('GET', '/droplets')
+        if 'droplets' not in json_response:
+            self.module.fail_json(msg="Invalid API response: {}".format(json_response), **self.result)
+        droplets.extend(json_response['droplets'])
+        while 'pages' in json_response['links'] and 'next' in json_response['links']['pages']:
+            json_response = requests.request(method, absolute_url=json_response['links']['pages']['next'])
+            droplets.extend(json_response['droplets'])
+
+        return droplets 
 
 def droplet_request(module, result, api_token, name, region_id, image_id, size_id, ssh_key_ids=[]):
     do = DO(module, result, api_token)
-    droplets_json = do.request('GET', '/droplets', None)
-    if 'droplets' not in droplets_json:
-        module.fail_json(msg='Invalid response from API: {}'.format(keys_json), **result)
+    droplets = do.list_droplets()
 
-    for droplet in droplets_json['droplets']:
+    for droplet in droplets:
         if droplet['name'] == name:
             module.exit_json(droplet=droplet, **result)
     droplet_json_response = do.request('POST', '/droplets', {'name': name, 'region': region_id,
