@@ -48,6 +48,10 @@
   command: openssl dhparam -out /root/vpn/certs/dh2048.pem 2048
   args:
     creates: /root/vpn/certs/dh2048.pem
+- name: Generate tls auth key
+  command: openvpn --genkey --secret /root/vpn/certs/ta.key
+  args:
+    creates: /root/vpn/certs/ta.key
 
 - name: Make openvpn user
   user:
@@ -70,6 +74,14 @@
   copy:
     remote_src: yes
     src: /root/vpn/certs/dh2048.pem
+    dest: /etc/openvpn/server/keys
+    mode: 0600
+    owner: openvpn
+    group: openvpn
+- name: Copy necessary private keys to /etc/openvpn/server
+  copy:
+    remote_src: yes
+    src: /root/vpn/certs/ta.key
     dest: /etc/openvpn/server/keys
     mode: 0600
     owner: openvpn
@@ -136,4 +148,9 @@
   fetch:
     src: /root/vpn/certs/client-key.pem
     dest: "{{ lookup('env', 'HOME') }}/client-key.pem"
+    flat: yes
+- name: Copy tls auth key to host
+  fetch:
+    src: /root/vpn/certs/ta.key
+    dest: "{{ lookup('env', 'HOME') }}/ta.key"
     flat: yes

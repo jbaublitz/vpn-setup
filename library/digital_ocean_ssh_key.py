@@ -10,25 +10,39 @@ class DO():
         self.api_token = api_token
         self.base_url = base_url
 
-    def request(self, method, endpoint, json):
+    def request(self, method, endpoint, json=None, endpoint_is_absolute=False):
         headers = {}
         headers['Content-Type'] = 'application/json'
         headers['Authorization'] = 'Bearer {}'.format(self.api_token)
         try:
-            json_response = requests.request(method, '{}{}'.format(self.base_url, endpoint),
-                    json=json, headers=headers).json()
+            if endpoint_is_absolute:
+                url = endpoint
+            else:
+                url = '{}{}'.format(self.base_url, endpoint)
+
+            json_response = requests.request(method, url, json=json, headers=headers).json()
         except Exception as e:
             self.module.fail_json(msg=e, **self.result)
 
         return json_response
 
+    def list_keys(self):
+        keys = []
+        json_response = self.request('GET', '/account/keys')
+        if 'ssh_keys' not in json_response:
+            self.module.fail_json(msg="Invalid API response: {}".format(json_response), **self.result)
+        keys.extend(json_response['ssh_keys'])
+        while 'pages' in json_response['links'] and 'next' in json_response['links']['pages']:
+            json_response = requests.request(method, absolute_url=json_response['links']['pages']['next'])
+            keys.extend(json_response['ssh_keys'])
+
+        return keys
+
 def ssh_key_request(module, result, api_token, name, ssh_pub_key):
     do = DO(module, result, api_token)
-    keys_json = do.request('GET', '/account/keys', None)
-    if 'ssh_keys' not in keys_json:
-        module.fail_json(msg='Invalid response from API: {}'.format(keys_json), **result)
+    keys_json = do.list_keys()
 
-    for key in keys_json['ssh_keys']:
+    for key in keys_json:
         if key['name'] == name:
             if key['public_key'] == ssh_pub_key:
                 module.exit_json(ssh_key=key, **result)

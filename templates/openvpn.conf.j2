@@ -5,11 +5,15 @@ dev tun
 tls-server
 server 10.10.10.0 255.255.255.0
 
+user openvpn
+group openvpn
+
 ca /etc/openvpn/server/keys/ca.pem
 cert /etc/openvpn/server/keys/server.pem
 key /etc/openvpn/server/keys/server-key.pem
 dh /etc/openvpn/server/keys/dh2048.pem
 
 cipher AES-256-CBC
+tls-auth /etc/openvpn/server/keys/ta.key 1
 
 push "redirect-gateway def1"

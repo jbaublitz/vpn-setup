@@ -12,11 +12,16 @@ class DO():
         self.api_token = api_token
         self.base_url = base_url
 
-    def request(self, method, endpoint, json):
+    def request(self, method, endpoint, json=None, endpoint_is_absolute=False):
         headers = {}
         headers['Content-Type'] = 'application/json'
         headers['Authorization'] = 'Bearer {}'.format(self.api_token)
         try:
+            if endpoint_is_absolute:
+                url = endpoint
+            else:
+                url = '{}{}'.format(self.base_url, endpoint)
+
             json_response = requests.request(method, '{}{}'.format(self.base_url, endpoint),
                     json=json, headers=headers).json()
         except Exception as e:
@@ -24,18 +29,29 @@ class DO():
 
         return json_response
 
+    def list_firewalls(self):
+        firewalls = []
+        json_response = self.request('GET', '/firewalls')
+        if 'firewalls' not in json_response:
+            self.module.fail_json(msg="Invalid API response: {}".format(json_response), **self.result)
+        firewalls.extend(json_response['firewalls'])
+        while 'pages' in json_response['links'] and 'next' in json_response['links']['pages']:
+            json_response = requests.request(method, absolute_url=json_response['links']['pages']['next'])
+            firewalls.extend(json_response['firewalls'])
+
+        return firewalls
+
 def firewall_request(module, result, api_token, name, inbound_rules, outbound_rules, droplet_ids):
     do = DO(module, result, api_token)
-    firewall_json = do.request('GET', '/firewalls', None)
-    if 'firewalls' not in firewall_json:
-        module.fail_json(msg='Invalid response from API: {}'.format(firewall_json), **result)
+    firewall_json = do.list_firewalls()
 
-    for firewall in firewall_json['firewalls']:
+    for firewall in firewall_json:
         equal = True
-        for inbound_rule1, inbound_rule2 in zip(firewall['inbound_rules'], inbound_rules):
-            if inbound_rule1['sources']['addresses'].sort() != inbound_rule2['sources']['addresses'].sort():
-                equal = False
-        if len(inbound_rules) != len(firewall['inbound_rules']):
+        if len(inbound_rules) == len(firewall['inbound_rules']):
+            for inbound_rule1, inbound_rule2 in zip(firewall['inbound_rules'], inbound_rules):
+                if inbound_rule1['sources']['addresses'].sort() != inbound_rule2['sources']['addresses'].sort():
+                    equal = False
+        else:
             equal = False
 
         if firewall['name'] == name and equal:
