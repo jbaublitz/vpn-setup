@@ -7,18 +7,14 @@
       - openvpn
       - golang-cfssl
 
-- name: Make vpn bundle dir
+- name: Make vpn bundle dirs
   file:
-    name: /root/vpn
+    name: "{{ item }}"
     state: directory
-- name: Make vpn bundle subdir for certs
-  file:
-    name: /root/vpn/certs
-    state: directory
-- name: Make vpn bundle subdir for config
-  file:
-    name: /root/vpn/config
-    state: directory
+  with_items:
+    - /root/vpn
+    - /root/vpn/certs
+    - /root/vpn/config
 
 - name: Install cfssl CSR config file
   template:
@@ -65,43 +61,26 @@
 - name: Copy necessary private keys to /etc/openvpn/server
   copy:
     remote_src: yes
-    src: /root/vpn/certs/server-key.pem
+    src: "{{ item }}"
     dest: /etc/openvpn/server/keys
     mode: 0600
     owner: openvpn
     group: openvpn
-- name: Copy necessary private keys to /etc/openvpn/server
-  copy:
-    remote_src: yes
-    src: /root/vpn/certs/dh2048.pem
-    dest: /etc/openvpn/server/keys
-    mode: 0600
-    owner: openvpn
-    group: openvpn
-- name: Copy necessary private keys to /etc/openvpn/server
-  copy:
-    remote_src: yes
-    src: /root/vpn/certs/ta.key
-    dest: /etc/openvpn/server/keys
-    mode: 0600
-    owner: openvpn
-    group: openvpn
+  with_items:
+    - /root/vpn/certs/server-key.pem
+    - /root/vpn/certs/dh2048.pem
+    - /root/vpn/certs/ta.key
 - name: Copy necessary public keys to /etc/openvpn/server
   copy:
     remote_src: yes
-    src: /root/vpn/certs/server.pem
+    src: "{{ item }}"
     dest: /etc/openvpn/server/keys
     mode: 0644
     owner: openvpn
     group: openvpn
-- name: Copy necessary public keys to /etc/openvpn/server
-  copy:
-    remote_src: yes
-    src: /root/vpn/certs/ca.pem
-    dest: /etc/openvpn/server/keys
-    mode: 0644
-    owner: openvpn
-    group: openvpn
+  with_items:
+    - /root/vpn/certs/server.pem
+    - /root/vpn/certs/ca.pem
 - name: Generate OpenVPN config file
   template:
     src: templates/openvpn.conf.j2
@@ -129,28 +108,14 @@
   template:
     src: templates/openvpn-client.conf.j2
     dest: /root/openvpn.conf
-- name: Copy config file to host
+- name: Copy OpenVPN files to local host
   fetch:
-    src: /root/openvpn.conf
-    dest: "{{ lookup('env', 'HOME') }}/openvpn.conf"
+    src: "{{ item }}"
+    dest: "{{ lookup('env', 'HOME') }}/"
     flat: yes
-- name: Copy CA to host
-  fetch:
-    src: /root/vpn/certs/ca.pem
-    dest: "{{ lookup('env', 'HOME') }}/ca.pem"
-    flat: yes
-- name: Copy client certificate to host
-  fetch:
-    src: /root/vpn/certs/client.pem
-    dest: "{{ lookup('env', 'HOME') }}/client.pem"
-    flat: yes
-- name: Copy client key to host
-  fetch:
-    src: /root/vpn/certs/client-key.pem
-    dest: "{{ lookup('env', 'HOME') }}/client-key.pem"
-    flat: yes
-- name: Copy tls auth key to host
-  fetch:
-    src: /root/vpn/certs/ta.key
-    dest: "{{ lookup('env', 'HOME') }}/ta.key"
-    flat: yes
+  with_items:
+    - /root/openvpn.conf
+    - /root/vpn/certs/ca.pem
+    - /root/vpn/certs/client.pem
+    - /root/vpn/certs/client-key.pem
+    - /root/vpn/certs/ta.key

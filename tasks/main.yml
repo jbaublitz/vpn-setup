@@ -1,4 +1,6 @@
 - include_tasks: local.yml
   when: target == 'local'
+- include_tasks: local_connected.yml
+  when: target == 'local_connected'
 - include_tasks: vpn.yml
   when: target == 'vpn'

@@ -23,7 +23,7 @@ Example Playbook
 
 Invocation should be as follows:
 
-`DO_API_KEY=[KEY] ansible-playbook -i vpn-setup/inventory vpn-setup.yml`
+`DO_API_KEY=[KEY] ansible-playbook -K -i vpn-setup/inventory vpn-setup.yml`
 
 where `vpn-setup.yml` contains the following:
 
@@ -43,6 +43,10 @@ where `vpn-setup.yml` contains the following:
   remote_user: root
   roles:
     - { role: vpn-setup, target: vpn }
+- hosts: localhost
+  connection: local
+  roles:
+    - { role: vpn-setup, target: local_connected }
 ```
 
 License

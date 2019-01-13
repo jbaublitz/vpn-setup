@@ -1,3 +1,6 @@
 ---
 - name: Restart OpenVPN
   systemd: name=openvpn@server state=restarted
+
+- name: Restart OpenVPN client
+  systemd: name=openvpn@openvpn state=restarted

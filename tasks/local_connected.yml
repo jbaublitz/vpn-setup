@@ -1,0 +1,39 @@
+- block:
+  - name: Ensure OpenVPN is installed
+    apt:
+      name: openvpn
+      state: present
+  - name: Copy necessary files to /etc/openvpn
+    copy:
+      src: "{{ item }}"
+      dest: /etc/openvpn/
+    with_items:
+      - ~/ca.pem
+      - ~/client.pem
+      - ~/openvpn.conf
+  - name: Copy necessary files to /etc/openvpn
+    copy:
+      src: "{{ item }}"
+      dest: /etc/openvpn
+      mode: 0600
+    with_items:
+      - ~/client-key.pem
+      - ~/ta.key
+  become: yes
+
+- name: Cleanup files
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - ~/ca.pem
+    - ~/client.pem
+    - ~/openvpn.conf
+    - ~/client-key.pem
+    - ~/ta.key
+
+- name: Connect to OpenVPN server
+  systemd:
+    name: openvpn@openvpn
+    state: started
+  become: yes
