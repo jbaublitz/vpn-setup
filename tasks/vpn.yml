@@ -6,6 +6,7 @@
       - libpam-google-authenticator
       - openvpn
       - golang-cfssl
+      - sudo
 
 - name: Make vpn bundle dirs
   file:
@@ -53,6 +54,7 @@
   user:
     name: openvpn
     create_home: no
+    password: "!"
     shell: /usr/sbin/nologin
 - name: Make keys/ directory in /etc/openvpn/server
   file:
@@ -104,6 +106,28 @@
     out_interface: eth0
     jump: MASQUERADE
 
+- name: Passwordless sudo
+  lineinfile:
+    line: admin ALL=(ALL:ALL) NOPASSWD:ALL
+    create: yes
+    dest: /etc/sudoers.d/admin
+    mode: 0440
+- name: Generate temp password for admin user
+  shell: echo temppass | mkpasswd -P 0 --method=sha-512
+  register: password_output
+- name: Create admin user
+  user:
+    state: present
+    shell: /bin/bash
+    name: "{{ lookup('env', 'USER') }}"
+    password: "{{ password_output.stdout }}"
+    groups: admin
+- name: Add ssh key to admin user
+  lineinfile:
+    line: "{{ lookup('file', ssh_public_key_file) }}"
+    create: yes
+    dest: "/home/{{ lookup('env', 'USER') }}/.ssh/authorized_keys"
+
 - name: Generate client OpenVPN config file
   template:
     src: templates/openvpn-client.conf.j2
@@ -119,3 +143,13 @@
     - /root/vpn/certs/client.pem
     - /root/vpn/certs/client-key.pem
     - /root/vpn/certs/ta.key
+
+- name: sshd listen address
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    line: "{{ item }}"
+    state: present
+  notify: Restart sshd
+  with_items:
+    - ListenAddress 10.10.10.1
+    - PermitRootLogin no
