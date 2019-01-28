@@ -1,0 +1,4 @@
+#!/bin/bash
+
+IFINDEX=$(cat /sys/class/net/tun0/ifindex)
+busctl call org.freedesktop.resolve1 /org/freedesktop/resolve1 org.freedesktop.resolve1.Manager SetLinkDNS 'ia(iay)' $IFINDEX 1 $(python -c 'import socket; print(socket.AF_INET)') 4 10 10 10 1

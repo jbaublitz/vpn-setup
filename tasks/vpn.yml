@@ -7,6 +7,8 @@
       - openvpn
       - golang-cfssl
       - sudo
+      - whois
+      - dnsmasq
 
 - name: Make vpn bundle dirs
   file:
@@ -144,6 +146,16 @@
     - /root/vpn/certs/client-key.pem
     - /root/vpn/certs/ta.key
 
+- name: dnsmasq interface bind
+  lineinfile:
+    path: /etc/dnsmasq.conf
+    line: interface=tun0
+    state: present
+  notify: Restart dnsmasq
+- name: Start dnsmasq
+  systemd:
+    name: dnsmasq
+    state: started
 - name: sshd listen address
   lineinfile:
     path: /etc/ssh/sshd_config

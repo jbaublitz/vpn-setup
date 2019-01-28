@@ -14,7 +14,7 @@
   - name: Copy necessary files to /etc/openvpn
     copy:
       src: "{{ item }}"
-      dest: /etc/openvpn
+      dest: /etc/openvpn/
       mode: 0600
     with_items:
       - ~/client-key.pem
@@ -32,6 +32,12 @@
     - ~/client-key.pem
     - ~/ta.key
 
+- name: Copy shell script to /etc/openvpn
+  copy:
+    src: openvpn-dns
+    dest: /etc/openvpn/
+    mode: 0755
+  become: yes
 - name: Connect to OpenVPN server
   systemd:
     name: openvpn@openvpn

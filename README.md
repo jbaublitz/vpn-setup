@@ -23,7 +23,7 @@ Example Playbook
 
 Invocation should be as follows:
 
-`DO_API_KEY=[KEY] ansible-playbook -K -i vpn-setup/inventory vpn-setup.yml`
+`DO_API_KEY=[KEY] ansible-playbook -K -i vpn-setup/inventory vpn-setup.yml [--extra-vars="vpn_connected=yes"]`
 
 where `vpn-setup.yml` contains the following:
 
