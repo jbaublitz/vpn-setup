@@ -108,12 +108,14 @@
     out_interface: eth0
     jump: MASQUERADE
 
-- name: Passwordless sudo
-  lineinfile:
-    line: admin ALL=(ALL:ALL) NOPASSWD:ALL
-    create: yes
-    dest: /etc/sudoers.d/admin
-    mode: 0440
+# WARNING: Enabling passwordless sudo is not yet a good idea
+# WARNING: sudo rules will be added eventually
+#- name: Passwordless sudo
+#  lineinfile:
+#    line: %admin ALL=(ALL:ALL) NOPASSWD:ALL
+#    create: yes
+#    dest: /etc/sudoers.d/admin
+#    mode: 0440
 - name: Generate temp password for admin user
   shell: echo temppass | mkpasswd -P 0 --method=sha-512
   register: password_output
