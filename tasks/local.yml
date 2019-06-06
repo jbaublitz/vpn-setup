@@ -18,7 +18,7 @@
   digital_ocean:
     api_token: "{{ do_api_key }}"
     name: "{{ droplet_name }}"
-    region_id: ams3
+    region_id: "{{ do_hosted_region | default('ams3') }}"
     image_id: ubuntu-18-04-x64
     size_id: s-1vcpu-1gb
     ssh_key_ids:
