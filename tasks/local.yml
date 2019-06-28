@@ -4,16 +4,19 @@
     url: https://api.ipify.org
     return_content: yes
   register: public_ip
+  when: "vpn_connected is undefined"
 - name: Generate SSH key
-  command: ssh-keygen -b 2048 -t rsa -f "{{ ansible_ssh_private_key_file }}"
+  command: ssh-keygen -b {{ rsa_key_size }} -t rsa -f {{ ansible_ssh_private_key_file }}
   args:
     creates: "{{ ansible_ssh_private_key_file }}"
+  when: "vpn_connected is undefined"
 - name: Add SSH key
   digital_ocean_ssh_key:
     api_token: "{{ do_api_key }}"
     name: "{{ ansible_ssh_private_key_file | basename }}"
     ssh_pub_key: "{{ lookup('file', ssh_public_key_file) }}"
   register: ssh_key
+  when: "vpn_connected is undefined"
 - name: Create droplet
   digital_ocean:
     api_token: "{{ do_api_key }}"
@@ -24,6 +27,7 @@
     ssh_key_ids:
       - "{{ ssh_key.ssh_key.id }}"
   register: droplet
+  when: "vpn_connected is undefined"
 - name: Droplet firewall rules
   digital_ocean_firewall:
     api_token: "{{ do_api_key }}"
@@ -52,6 +56,7 @@
             - 0.0.0.0/0
     droplet_ids:
       - "{{ droplet.droplet.id }}"
+  when: "vpn_connected is undefined"
 - name: Register droplet in vpn group
   add_host:
     hostname: 10.10.10.1

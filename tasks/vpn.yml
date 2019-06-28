@@ -91,7 +91,7 @@
     dest: /etc/openvpn/server.conf
   notify: 
     - Restart OpenVPN
-- name: Start OpenVPN server
+- name: OpenVPN server
   systemd:
     name: openvpn@server
     state: started
@@ -117,7 +117,7 @@
 #    dest: /etc/sudoers.d/admin
 #    mode: 0440
 - name: Generate temp password for admin user
-  shell: echo temppass | mkpasswd -P 0 --method=sha-512
+  shell: echo {{ temppass | mandatory }} | mkpasswd -P 0 --method=sha-512
   register: password_output
 - name: Create admin user
   user:

@@ -6,17 +6,29 @@ This role is for automation of a hardened VPN setup on Digital Ocean
 Requirements
 ------------
 
-requests
+`--extravars="temppass=[INITIAL_VPN_PASSWORD]"` is required to successfully run this playbook.
 
-Role Variables
+Variables
 --------------
+
+* `temppass=[ADMIN_USER_PASSWORD]` is required and used to set up admin password on new VPN
+* `vpn_connected=yes` should only be used when running while connected to an already provisioned VPN
+using this script
+* `droplet_name=[NAME]` overrides the droplet name
+* `do_hosted_region=[DIGITAL_OCEAN_HOSTED_REGION_CODE]` changes where this VPN is hosted
+* `rsa_key_size=[NUMBER]` specifies the size of the key size of any RSA key generated
+* `ca_expiration=[NUMBER]h` specifes number of hours until VPN certificate expiration
+* `ansible_ssh_private_key_file=[PATH]` overrides SSH key used in ansible
+
 
 TODO
 
 Dependencies
 ------------
 
-None
+`requests` library - currently used in `library/` directory-contained modules to do the API requests
+until Digital Ocean support is better in Ansible
+
 
 Example Playbook
 ----------------
@@ -32,7 +44,7 @@ where `vpn-setup.yml` contains the following:
 - hosts: localhost
   connection: local
   roles:
-    - { role: vpn-setup, target: local }
+  - { role: vpn-setup, target: local }
 - hosts: vpn 
   remote_user: root
   gather_facts: no
@@ -42,11 +54,11 @@ where `vpn-setup.yml` contains the following:
 - hosts: vpn
   remote_user: root
   roles:
-    - { role: vpn-setup, target: vpn }
+  - { role: vpn-setup, target: vpn }
 - hosts: localhost
   connection: local
   roles:
-    - { role: vpn-setup, target: local_connected }
+  - { role: vpn-setup, target: local_connected }
 ```
 
 License

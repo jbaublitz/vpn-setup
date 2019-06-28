@@ -4,11 +4,11 @@ proto tcp
 remote {{ ansible_default_ipv4.address }} 443
 remote-cert-tls server
 
-ca ca.pem
-cert client.pem
-key client-key.pem
+ca {{ droplet_name}}-ca.pem
+cert {{ droplet_name }}-client.pem
+key {{ droplet_name }}-client-key.pem
 
 cipher AES-256-CBC
-tls-auth ta.key 0
+tls-auth {{ droplet_name }}-ta.key 0
 
 up /etc/openvpn/openvpn-dns
