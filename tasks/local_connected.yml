@@ -10,6 +10,12 @@
     with_items:
       - ~/ca.pem
       - ~/client.pem
+  - name: Copy necessary files to /etc/openvpn
+    copy:
+      src: "{{ item }}"
+      dest: /etc/openvpn/{{ droplet_name }}{{ (item | splitext).1 }}
+      mode: 0600
+    with_items:
       - ~/openvpn.conf
   - name: Copy necessary files to /etc/openvpn
     copy:
@@ -40,6 +46,6 @@
   become: yes
 - name: Connect to OpenVPN server
   systemd:
-    name: "openvpn@{{ droplet_name }}-openvpn"
+    name: "openvpn@{{ droplet_name }}"
     state: started
   become: yes

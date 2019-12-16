@@ -67,6 +67,7 @@
     api_token: "{{ do_api_key }}"
     name: "{{ droplet_name }}"
   register: droplet_for_ip
+  until: 'droplet_for_ip.droplet.networks is defined'
   when: "vpn_connected is undefined"
 - name: Register droplet in vpn group
   add_host:
