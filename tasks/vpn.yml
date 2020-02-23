@@ -3,12 +3,17 @@
   apt:
     update_cache: yes
     name:
-      - libpam-google-authenticator
       - openvpn
       - golang-cfssl
       - sudo
       - whois
       - dnsmasq
+- name: Install software
+  apt:
+    update_cache: yes
+    name:
+      - znc
+  when: "znc == 'yes'"
 
 - name: Make vpn bundle dirs
   file:
@@ -18,6 +23,16 @@
     - /root/vpn
     - /root/vpn/certs
     - /root/vpn/config
+
+- name: Make znc bundle dirs
+  file:
+    name: "{{ item }}"
+    state: directory
+  with_items:
+    - /root/znc
+    - /root/znc/certs
+    - /root/znc/config
+  when: "znc == 'yes'"
 
 - name: Install cfssl CSR config file
   template:
@@ -51,6 +66,27 @@
   command: openvpn --genkey --secret /root/vpn/certs/ta.key
   args:
     creates: /root/vpn/certs/ta.key
+
+- block:
+  - name: Install cfssl CSR config file
+    template:
+      src: templates/znc-csr.json.j2
+      dest: /root/znc/config/csr.json
+  - name: Install cfssl CA config file
+    template:
+      src: templates/znc-ca.json.j2
+      dest: /root/znc/config/ca.json
+  - name: Generate SSL CA
+    shell: cfssl genkey -initca /root/znc/config/csr.json | cfssljson -bare /root/znc/certs/ca
+    args:
+      creates: /root/znc/certs/ca.pem
+  - name: Generate SSL server
+    shell: cfssl gencert -ca=/root/znc/certs/ca.pem -ca-key=/root/znc/certs/ca-key.pem \
+           -config=/root/znc/config/ca.json -profile="server" -hostname="znc.icanhazyour.info" \
+           /root/znc/config/csr.json | cfssljson -bare /root/znc/certs/server
+    args:
+      creates: /root/znc/certs/server.pem
+  when: "znc == 'yes'"
 
 - name: Make openvpn user
   user:

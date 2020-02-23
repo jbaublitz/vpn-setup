@@ -43,6 +43,11 @@
         sources:
           addresses:
             - 0.0.0.0/0
+      - protocol: tcp
+        ports: 6697
+        sources:
+          addresses:
+            - 0.0.0.0/0
     outbound_rules:
       - protocol: tcp
         ports: 1-65535
