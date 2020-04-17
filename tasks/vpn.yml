@@ -86,6 +86,10 @@
            /root/znc/config/csr.json | cfssljson -bare /root/znc/certs/server
     args:
       creates: /root/znc/certs/server.pem
+  - name: Generate DH params
+    command: openssl dhparam -out /root/znc/certs/dh2048.pem 2048
+    args:
+      creates: /root/znc/certs/dh2048.pem
   when: "znc == 'yes'"
 
 - name: Make openvpn user
