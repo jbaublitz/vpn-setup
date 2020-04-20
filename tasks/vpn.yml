@@ -38,6 +38,8 @@
   template:
     src: templates/csr.json.j2
     dest: /root/vpn/config/csr.json
+  vars:
+    cert_cn: VPN CA
 - name: Install cfssl CA config file
   template:
     src: templates/ca.json.j2
@@ -46,18 +48,42 @@
   shell: cfssl genkey -initca /root/vpn/config/csr.json | cfssljson -bare /root/vpn/certs/ca
   args:
     creates: /root/vpn/certs/ca.pem
+- name: Install cfssl CSR config file
+  template:
+    src: templates/csr.json.j2
+    dest: /root/vpn/config/csr-server.json
+  vars:
+    cert_cn: VPN server
 - name: Generate SSL server
   shell: cfssl gencert -ca=/root/vpn/certs/ca.pem -ca-key=/root/vpn/certs/ca-key.pem \
          -config=/root/vpn/config/ca.json -profile="server" -hostname="server" \
-         /root/vpn/config/csr.json | cfssljson -bare /root/vpn/certs/server
+         /root/vpn/config/csr-server.json | cfssljson -bare /root/vpn/certs/server
   args:
     creates: /root/vpn/certs/server.pem
+- name: Install cfssl CSR config file
+  template:
+    src: templates/csr.json.j2
+    dest: /root/vpn/config/csr-client.json
+  vars:
+    cert_cn: VPN client
 - name: Generate SSL client
   shell: cfssl gencert -ca=/root/vpn/certs/ca.pem -ca-key=/root/vpn/certs/ca-key.pem \
          -config=/root/vpn/config/ca.json -profile="client" -hostname="client" \
-         /root/vpn/config/csr.json | cfssljson -bare /root/vpn/certs/client
+         /root/vpn/config/csr-client.json | cfssljson -bare /root/vpn/certs/client
   args:
     creates: /root/vpn/certs/client.pem
+- name: Install cfssl CSR config file
+  template:
+    src: templates/csr.json.j2
+    dest: /root/vpn/config/csr-phone.json
+  vars:
+    cert_cn: VPN phone
+- name: Generate SSL client for phone
+  shell: cfssl gencert -ca=/root/vpn/certs/ca.pem -ca-key=/root/vpn/certs/ca-key.pem \
+         -config=/root/vpn/config/ca.json -profile="phone" -hostname="phone" \
+         /root/vpn/config/csr-phone.json | cfssljson -bare /root/vpn/certs/phone
+  args:
+    creates: /root/vpn/certs/phone.pem
 - name: Generate DH params
   command: openssl dhparam -out /root/vpn/certs/dh2048.pem 2048
   args:
@@ -176,6 +202,26 @@
   template:
     src: templates/openvpn-client.conf.j2
     dest: /root/openvpn.conf
+- name: Read cert files for inlining
+  slurp:
+    src: /root/vpn/certs/ca.pem
+  register: phone_ca
+- name: Read cert files for inlining
+  slurp:
+    src: /root/vpn/certs/phone.pem
+  register: phone_cert
+- name: Read cert files for inlining
+  slurp:
+    src: /root/vpn/certs/phone-key.pem
+  register: phone_key
+- name: Read cert files for inlining
+  slurp:
+    src: /root/vpn/certs/ta.key
+  register: tls_auth
+- name: Generate phone client OpenVPN config file
+  template:
+    src: templates/openvpn-client-phone.conf.j2
+    dest: /root/openvpn-phone.conf
 - name: Copy OpenVPN files to local host
   fetch:
     src: "{{ item }}"
@@ -183,11 +229,11 @@
     flat: yes
   with_items:
     - /root/openvpn.conf
+    - /root/openvpn-phone.conf
     - /root/vpn/certs/ca.pem
     - /root/vpn/certs/client.pem
     - /root/vpn/certs/client-key.pem
     - /root/vpn/certs/ta.key
-
 - name: dnsmasq interface bind
   lineinfile:
     path: /etc/dnsmasq.conf

@@ -10,6 +10,7 @@
     with_items:
       - ~/ca.pem
       - ~/client.pem
+      - ~/openvpn-phone.conf
   - name: Copy necessary files to /etc/openvpn
     copy:
       src: "{{ item }}"
@@ -35,6 +36,7 @@
     - ~/ca.pem
     - ~/client.pem
     - ~/openvpn.conf
+    - ~/openvpn-phone.conf
     - ~/client-key.pem
     - ~/ta.key
 

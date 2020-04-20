@@ -1,0 +1,20 @@
+client
+dev tun
+proto tcp
+remote {{ ansible_default_ipv4.address }} 443
+remote-cert-tls server
+cipher AES-256-CBC
+
+<ca>
+{{ phone_ca.content | b64decode }}
+</ca>
+<cert>
+{{ phone_cert.content | b64decode }}
+</cert>
+<key>
+{{ phone_key.content | b64decode }}
+</key>
+<tls-auth>
+{{ tls_auth.content | b64decode }}
+</tls-auth>
+key-direction 0
