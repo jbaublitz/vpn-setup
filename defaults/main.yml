@@ -6,6 +6,7 @@ do_api_key: "{{ lookup('env', 'DO_API_KEY') }}"
 
 # local vars
 droplet_name: autovpn
+znc: no
 
 # vpn vars
 rsa_key_size: 2048
