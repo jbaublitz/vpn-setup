@@ -7,7 +7,6 @@
       - golang-cfssl
       - sudo
       - whois
-      - dnsmasq
 - name: Install software
   apt:
     update_cache: yes
@@ -108,7 +107,7 @@
       creates: /root/znc/certs/ca.pem
   - name: Generate SSL server
     shell: cfssl gencert -ca=/root/znc/certs/ca.pem -ca-key=/root/znc/certs/ca-key.pem \
-           -config=/root/znc/config/ca.json -profile="server" -hostname="znc.icanhazyour.info" \
+           -config=/root/znc/config/ca.json -profile="server" -hostname="znc.jbaublitz.me" \
            /root/znc/config/csr.json | cfssljson -bare /root/znc/certs/server
     args:
       creates: /root/znc/certs/server.pem
@@ -234,16 +233,6 @@
     - /root/vpn/certs/client.pem
     - /root/vpn/certs/client-key.pem
     - /root/vpn/certs/ta.key
-- name: dnsmasq interface bind
-  lineinfile:
-    path: /etc/dnsmasq.conf
-    line: interface=tun0
-    state: present
-  notify: Restart dnsmasq
-- name: Start dnsmasq
-  systemd:
-    name: dnsmasq
-    state: started
 - name: sshd listen address
   lineinfile:
     path: /etc/ssh/sshd_config
